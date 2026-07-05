@@ -348,6 +348,28 @@ section.active .memory-vignette.active { opacity: 1; pointer-events: auto; }
 }
 
 /* ========================================= */
+/* STARDUST CURSOR (DESKTOP ONLY)            */
+/* ========================================= */
+@media (pointer: fine) {
+    body, html, button, [role="button"], a { cursor: none !important; }
+    
+    #cursor-canvas { 
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+        pointer-events: none; z-index: 9998; 
+    }
+    
+    #stardust-cursor {
+        position: fixed; top: 0; left: 0; width: 6px; height: 6px; background: #fff; border-radius: 50%;
+        pointer-events: none; z-index: 9999;
+        box-shadow: 0 0 10px 2px rgba(255,255,255,0.8), 0 0 20px 5px rgba(229, 198, 159, 0.4);
+        transform: translate(-50%, -50%); display: block; will-change: transform;
+    }
+}
+@media (pointer: coarse) {
+    #cursor-canvas, #stardust-cursor { display: none !important; }
+}
+
+/* ========================================= */
 /* RESPONSIVENESS & MOBILE POLISH            */
 /* ========================================= */
 @media (max-width: 768px) {
