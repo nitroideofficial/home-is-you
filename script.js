@@ -3,7 +3,7 @@ let universeCamera, particlesMesh, shootingStar;
 let cosmicSpeed = { multiplier: 1 }; 
 let isEndingSequence = false;
 let isTransitioningToLetter = false;
-const PARTICLES_COUNT = 3000; 
+const PARTICLES_COUNT = 6000; // Increased to maintain density in expanded bounds
 let cameraLookAt = null;
 
 const lerp = (start, end, factor) => start + (end - start) * factor;
@@ -25,7 +25,8 @@ const initUniverse = () => {
     const posArray = new Float32Array(PARTICLES_COUNT * 3);
 
     for(let i = 0; i < PARTICLES_COUNT * 3; i++) {
-        posArray[i] = (Math.random() - 0.5) * 350;
+        // Expanded boundaries to 800 to ensure edges are never visible at far camera distances
+        posArray[i] = (Math.random() - 0.5) * 800;
     }
 
     particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
@@ -68,7 +69,7 @@ const initUniverse = () => {
             particlesMesh.rotation.y = (elapsedTime * 0.015) + (currentMouseX * 0.1);
             particlesMesh.rotation.x = (elapsedTime * 0.01) + (currentMouseY * 0.1);
             
-            particlesMesh.position.z += (cosmicSpeed.multiplier - 1) * 0.05;
+            // BUG FIX: Removed the runaway Z-axis translation that pushed the geometry away infinitely during the letter reading.
             
             const camDriftX = Math.sin(elapsedTime * 0.2) * 2;
             const camDriftY = Math.cos(elapsedTime * 0.2) * 2;
@@ -112,25 +113,56 @@ const triggerCosmicReaction = (type = 'default') => {
     gsap.to("#magical-light", { opacity: 0, duration: dur, delay: dur, ease: "power2.inOut" });
 };
 
-window.fireShootingStar = () => {
-    shootingStar.position.set(universeCamera.position.x + 25, universeCamera.position.y + 20, universeCamera.position.z - 30);
-    shootingStar.lookAt(universeCamera.position.x - 30, universeCamera.position.y - 15, universeCamera.position.z - 60);
-    
-    gsap.to(shootingStar.material, { opacity: 0.9, duration: 0.5, yoyo: true, repeat: 1 });
-    gsap.to(shootingStar.position, {
-        x: universeCamera.position.x - 30,
-        y: universeCamera.position.y - 15,
-        z: universeCamera.position.z - 60,
-        duration: 2.5,
-        ease: "none"
-    });
+// Dynamic, continuous shooting star loop for the ending
+let starLoopActive = false;
+
+window.startShootingStarLoop = () => {
+    if(starLoopActive) return;
+    starLoopActive = true;
+
+    const fireRandomStar = () => {
+        if(!starLoopActive) return;
+
+        // Randomize start position (high and far away in the background)
+        const startX = universeCamera.position.x + (Math.random() - 0.5) * 200;
+        const startY = universeCamera.position.y + 40 + Math.random() * 40; 
+        const startZ = universeCamera.position.z - 80 - Math.random() * 80;
+
+        shootingStar.position.set(startX, startY, startZ);
+
+        // Randomize end position to create dynamic diagonal trajectories
+        const endX = startX - 80 - Math.random() * 60;
+        const endY = startY - 80 - Math.random() * 60;
+        const endZ = startZ - 40 - Math.random() * 40;
+
+        shootingStar.lookAt(endX, endY, endZ);
+
+        // Randomize speed/duration of the star
+        const duration = 1.5 + Math.random() * 1.5;
+
+        // Animate opacity (fade in then out) and position
+        gsap.to(shootingStar.material, { opacity: 0.9, duration: duration * 0.3, yoyo: true, repeat: 1 });
+        gsap.to(shootingStar.position, {
+            x: endX,
+            y: endY,
+            z: endZ,
+            duration: duration,
+            ease: "none",
+            onComplete: () => {
+                // Wait a random time (between 3 to 8 seconds) before the next star
+                gsap.delayedCall(3 + Math.random() * 5, fireRandomStar);
+            }
+        });
+    };
+
+    // Fire the first one immediately
+    fireRandomStar();
 };
 
 // --- 2. OPENING SEQUENCE ---
 const playOpeningSequence = () => {
     const tl = gsap.timeline();
 
-    // Set random face on page load
     const randomRotX = Math.floor(Math.random() * 4) * 90;
     const randomRotY = Math.floor(Math.random() * 4) * 90;
     gsap.set("#dice-cube", { rotationX: randomRotX, rotationY: randomRotY });
@@ -156,18 +188,22 @@ const handleGiftOpening = () => {
       .to("#magical-light", { opacity: 1, scale: 1.8, duration: 2.5, ease: "sine.inOut" }, "-=1")
       .to(universeCamera.position, { z: universeCamera.position.z - 12, duration: 3, ease: "expo.inOut" }, "-=2.5")
       .to('.gift-wrapper', { opacity: 0, duration: 1 }, "-=1")
-      .to({}, { duration: 0.5 }) // Perfect overlap fix: Guarantee complete transition isolation
+      .to({}, { duration: 0.4 }) // Absolute cinematic isolation
       .call(() => {
           document.getElementById("sequence-opening").classList.remove("active");
           document.getElementById("sequence-memories").classList.add("active");
+          const mem1 = document.getElementById("mem-1");
+          mem1.classList.add("active");
+          gsap.fromTo(mem1, { opacity: 0, y: 15 }, { opacity: 1, y: 0, duration: 2, ease: "power2.out" });
       })
-      .to({}, { duration: 0.5 })
+      .to({}, { duration: 0.1 })
       .call(() => {
           const bgAudio = document.getElementById('bg-audio');
           bgAudio.volume = 0;
           const playPromise = bgAudio.play();
           if (playPromise !== undefined) {
               playPromise.then(() => {
+                  gsap.killTweensOf(bgAudio);
                   gsap.to(bgAudio, { volume: 0.22, duration: 3, ease: "power1.inOut" });
               }).catch(() => {});
           }
@@ -209,11 +245,12 @@ const setupMemories = () => {
         const p = content.querySelector('p');
         const btn = content.querySelector('button');
 
+        // Elegant paced reveal
         const tl = gsap.timeline();
         tl.to(hint, { opacity: 0, y: 8, duration: 0.6, ease: "power2.in" })
           .set(content, { opacity: 1, y: 0 }) 
           .fromTo(p, { opacity: 0, y: 15 }, { opacity: 1, y: 0, duration: 1.5, ease: "power2.out" }, "+=0.15") 
-          .fromTo(btn, { autoAlpha: 0 }, { autoAlpha: 1, duration: 1.2 }, "+=0.3"); 
+          .fromTo(btn, { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, duration: 1.2, ease: "power2.out" }, "+=0.3"); 
     };
 
     const setupVisualHover = (el) => {
@@ -231,27 +268,55 @@ const setupMemories = () => {
     const visDice = document.getElementById('vis-dice');
     setupVisualHover(visDice);
     let m1Done = false;
+    
     const triggerM1 = () => {
         if(m1Done) return; m1Done = true;
         visDice.classList.remove('floating'); 
         const cube = document.getElementById('dice-cube');
         
+        // Soft rolling shadow dynamically attached
+        const shadow = document.createElement('div');
+        shadow.style.cssText = "position:absolute; bottom:-15px; left:15%; width:70%; height:10px; background:rgba(0,0,0,0.5); filter:blur(6px); border-radius:50%; opacity:0; pointer-events:none;";
+        visDice.querySelector('.dice-scene').appendChild(shadow);
+        
+        // Capture current rotation to make the toss seamless
+        const currentRotX = gsap.getProperty(cube, "rotationX") || 0;
+        const currentRotY = gsap.getProperty(cube, "rotationY") || 0;
+
         gsap.timeline()
-            .to(cube, { rotationX: "-=45", rotationY: "+=45", duration: 0.5, ease: "back.in(2)" })
+            // 1. The Toss (Moves up, starts spinning wildly)
+            .to(shadow, { opacity: 0.3, scale: 0.5, duration: 0.4, ease: "power2.out" })
             .to(cube, { 
-                rotationX: 1080, // Always lands on ONE (front face)
+                y: -50, 
+                rotationX: currentRotX - 180, 
+                rotationY: currentRotY + 270, 
+                duration: 0.4, 
+                ease: "power2.out" 
+            }, "<")
+            
+            // 2. The Landing (Bounces on the floor)
+            .to(shadow, { opacity: 0.8, scale: 1, duration: 1.2, ease: "bounce.out" })
+            .to(cube, { 
+                y: 0, 
+                duration: 1.2, 
+                ease: "bounce.out" // Physical weight bouncing on the Y-axis
+            }, "<")
+            
+            // 3. The Spin (Decelerates via friction)
+            .to(cube, { 
+                rotationX: 1080, // Perfectly resolves on ONE
                 rotationY: 1080, 
-                duration: 2.5, 
-                ease: "expo.out" 
-            })
-            .to(cube, { rotationX: 1085, rotationY: 1075, duration: 0.8, ease: "sine.inOut" }, "-=0.8")
-            .to(cube, { rotationX: 1080, rotationY: 1080, duration: 0.6, ease: "sine.inOut" })
-            .call(() => triggerCosmicReaction('pulse'), null, "-=2.2")
+                duration: 1.4, 
+                ease: "power3.out" // Friction! No more springy backwards spinning.
+            }, "<")
+            
+            .call(() => triggerCosmicReaction('pulse'), null, "-=1.0")
             .call(() => revealContent(1), null, "-=0.2");
     };
+    
     visDice.addEventListener('click', triggerM1);
     visDice.addEventListener('keydown', (e) => handleKeypress(e, triggerM1));
-
+	
     // M2: Chat connect
     const visChat = document.getElementById('vis-chat');
     setupVisualHover(visChat);
@@ -319,19 +384,26 @@ const setupMemories = () => {
     // M4: Minecraft Island
     const visMc = document.getElementById('vis-mc');
     setupVisualHover(visMc);
-    const polys = visMc.querySelectorAll('.mc-part');
+    const dirt = visMc.querySelectorAll('.mc-dirt');
+    const grass = visMc.querySelectorAll('.mc-grass');
+    const tree = visMc.querySelectorAll('.mc-wood, .mc-leaf');
+    const lantern = visMc.querySelectorAll('.mc-lantern');
     const mcGlow = visMc.querySelector('.mc-glow');
     const petals = visMc.querySelectorAll('.mc-petal');
     
-    gsap.set(polys, { y: -20, opacity: 0, scale: 0.95, transformOrigin: "50% 50%" });
+    gsap.set('.mc-part', { y: -20, opacity: 0, scale: 0.95, transformOrigin: "50% 50%" });
     let m4Done = false;
     
     const triggerM4 = () => {
         if(m4Done) return; m4Done = true;
         visMc.classList.remove('floating');
+        
         gsap.timeline()
-            .to(polys, { y: 0, opacity: 1, scale: 1, stagger: 0.08, duration: 1.5, ease: "back.out(1.2)" })
-            .to(mcGlow, { opacity: 0.6, duration: 2, ease: "sine.inOut", yoyo: true, repeat: -1 }, "-=0.5")
+            // Handcrafted sequenced build
+            .to([dirt, grass], { y: 0, opacity: 1, scale: 1, stagger: 0.05, duration: 1.2, ease: "back.out(1.2)" })
+            .to(tree, { y: 0, opacity: 1, scale: 1, stagger: 0.1, duration: 1.2, ease: "back.out(1.5)" }, "-=0.6")
+            .to(lantern, { y: 0, opacity: 1, scale: 1, duration: 0.8, ease: "power2.out" }, "-=0.4")
+            .to(mcGlow, { opacity: 0.6, duration: 2, ease: "sine.inOut", yoyo: true, repeat: -1 }, "-=0.2")
             .call(() => {
                 visMc.classList.add('gentle-float');
                 petals.forEach((petal, i) => {
@@ -451,7 +523,7 @@ const setupMemories = () => {
     envelope.addEventListener('click', openEnvelope);
     envelope.addEventListener('keydown', (e) => handleKeypress(e, openEnvelope));
 
-    // Custom Audio Player with Ducking
+    // Custom Audio Player with Precise Ducking & Smart Shuffle Tracks
     const btnVoice = document.getElementById('btn-voice-note');
     const playIcon = btnVoice.querySelector('.play-icon');
     const pauseIcon = btnVoice.querySelector('.pause-icon');
@@ -460,6 +532,41 @@ const setupMemories = () => {
     const voiceAudio = document.getElementById('voice-audio');
     const bgAudio = document.getElementById('bg-audio');
     
+    // Setup Smart Shuffle Voice Logic
+    const voiceTracks = ['voice/voice1.mp3', 'voice/voice2.mp3', 'voice/voice3.mp3', 'voice/voice4.mp3', 'voice/voice5.mp3'];
+    let playQueue = [];
+    let lastPlayed = null;
+
+    // Fisher-Yates Shuffle Algorithm
+    const shuffleArray = (array) => {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    };
+
+    const setNextRandomVoice = () => {
+        // If the queue is empty, refill and shuffle it
+        if (playQueue.length === 0) {
+            playQueue = [...voiceTracks];
+            shuffleArray(playQueue);
+            
+            // Prevent the exact same track from playing back-to-back when a new shuffle begins
+            if (playQueue[0] === lastPlayed && playQueue.length > 1) {
+                [playQueue[0], playQueue[1]] = [playQueue[1], playQueue[0]];
+            }
+        }
+        
+        // Grab the next track in the shuffled deck
+        const nextTrack = playQueue.shift();
+        lastPlayed = nextTrack;
+        
+        voiceAudio.src = nextTrack;
+        voiceAudio.load();
+    };
+
+    // Initialize with the first shuffled track immediately
+    setNextRandomVoice();
     let isPlaying = false;
 
     voiceAudio.addEventListener('ended', () => {
@@ -471,9 +578,14 @@ const setupMemories = () => {
         gsap.to(voiceStatus, { opacity: 0.6, color: "rgba(44, 41, 37, 0.4)", duration: 0.3 });
         gsap.to(cosmicSpeed, { multiplier: 0.15, duration: 1, ease: "power2.in" });
         
+        // Exact ~2s post-audio pause before restoring bgm
         if (bgAudio) {
+            gsap.killTweensOf(bgAudio);
             gsap.to(bgAudio, { volume: 0.22, duration: 2, ease: "power2.inOut", delay: 2 });
         }
+
+        // Queue up the next random voice for her next click
+        setNextRandomVoice(); 
     });
 
     btnVoice.addEventListener('click', () => {
@@ -492,7 +604,10 @@ const setupMemories = () => {
                     gsap.to(voiceStatus, { opacity: 1, color: "var(--ink-color)", duration: 0.3 });
                     gsap.to(cosmicSpeed, { multiplier: 0.05, duration: 1, ease: "power2.out" });
                     
-                    if (bgAudio) gsap.to(bgAudio, { volume: 0.05, duration: 1.5, ease: "power2.inOut" });
+                    if (bgAudio) {
+                        gsap.killTweensOf(bgAudio);
+                        gsap.to(bgAudio, { volume: 0.05, duration: 1.5, ease: "power2.inOut" });
+                    }
                 }).catch(error => {
                     console.error("Audio blocked:", error);
                     isPlaying = false;
@@ -510,7 +625,10 @@ const setupMemories = () => {
             gsap.to(voiceStatus, { opacity: 0.6, color: "rgba(44, 41, 37, 0.4)", duration: 0.3 });
             gsap.to(cosmicSpeed, { multiplier: 0.15, duration: 1, ease: "power2.in" });
             
-            if (bgAudio) gsap.to(bgAudio, { volume: 0.22, duration: 1.5, ease: "power2.inOut" });
+            if (bgAudio) {
+                gsap.killTweensOf(bgAudio);
+                gsap.to(bgAudio, { volume: 0.22, duration: 1.5, ease: "power2.inOut" });
+            }
         }
     });
 };
@@ -552,22 +670,29 @@ const setupEnding = () => {
         msgs.forEach((msg, index) => {
             const isLast = index === msgs.length - 1;
             
-            gsap.set(msg, { xPercent: -50, yPercent: -50, y: 10, opacity: 0 });
+            gsap.set(msg, { xPercent: -50, yPercent: -50, y: 15, opacity: 0 });
             
             tl.to(msg, { opacity: 1, y: 0, duration: 3, ease: "power2.out" })
-              .to({}, { duration: isLast ? 6 : 4 }) 
-              .to(msg, { opacity: 0, y: -10, duration: 3, ease: "power2.in" });
+              .to({}, { duration: isLast ? 6 : 4 }); 
+            
+            if (!isLast) {
+                tl.to(msg, { opacity: 0, y: -15, duration: 2.5, ease: "power2.in" })
+                  .to({}, { duration: 0.8 }); // absolute isolation between phrases
+            } else {
+                // Keep the final word embedded in the stars momentarily, then trigger the meteor shower loop
+                tl.call(() => { if(window.startShootingStarLoop) window.startShootingStarLoop(); })
+                  .to(msg, { opacity: 0, duration: 5, ease: "power2.inOut" }, "+=1") // gracefully fades to quiet universe
+                  .to(universeCamera.position, { z: 120, duration: 25, ease: "sine.inOut" }, "-=4")
+                  .to(cosmicSpeed, { multiplier: 0.05, duration: 15 }, "-=25")
+                  .to('#aurora', { opacity: 0.1, duration: 15 }, "-=25");
+
+                const bgAudio = document.getElementById('bg-audio');
+                if (bgAudio) {
+                    gsap.killTweensOf(bgAudio);
+                    tl.to(bgAudio, { volume: 0, duration: 15, ease: "power2.inOut" }, "-=25");
+                }
+            }
         });
-
-        tl.call(() => { if(window.fireShootingStar) window.fireShootingStar(); })
-          .to(universeCamera.position, { z: 120, duration: 20, ease: "sine.inOut" })
-          .to(cosmicSpeed, { multiplier: 0.05, duration: 10 }, "-=20")
-          .to('#aurora', { opacity: 0.1, duration: 10 }, "-=20");
-
-        const bgAudio = document.getElementById('bg-audio');
-        if (bgAudio) {
-            tl.to(bgAudio, { volume: 0, duration: 12, ease: "power2.inOut" }, "-=20");
-        }
     });
 };
 
