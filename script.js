@@ -680,7 +680,10 @@ const setupEnding = () => {
                   .to({}, { duration: 0.8 }); // absolute isolation between phrases
             } else {
                 // Keep the final word embedded in the stars momentarily, then trigger the meteor shower loop
-                tl.call(() => { if(window.startShootingStarLoop) window.startShootingStarLoop(); })
+                tl.call(() => { 
+                    if(window.startShootingStarLoop) window.startShootingStarLoop(); 
+                    gsap.to('#keepsake-btn', { opacity: 1, pointerEvents: 'auto', duration: 3, delay: 4, ease: "power2.inOut" });
+                })
                   .to(msg, { opacity: 0, duration: 5, ease: "power2.inOut" }, "+=1") // gracefully fades to quiet universe
                   .to(universeCamera.position, { z: 120, duration: 25, ease: "sine.inOut" }, "-=4")
                   .to(cosmicSpeed, { multiplier: 0.05, duration: 15 }, "-=25")
@@ -694,11 +697,127 @@ const setupEnding = () => {
             }
         });
     });
+
+    // NEW: Keepsake Generator Logic
+    const keepsakeBtn = document.getElementById('keepsake-btn');
+    if (keepsakeBtn) {
+        // Add Stardust cursor hover effect to the new button
+        keepsakeBtn.addEventListener('mouseenter', () => {
+            gsap.to(keepsakeBtn, { color: "rgba(255, 255, 255, 0.8)", duration: 0.3 });
+            gsap.to('#stardust-cursor', { scale: 2.5, opacity: 0.8, duration: 0.3, ease: "expo.out" });
+        });
+        
+        keepsakeBtn.addEventListener('mouseleave', () => {
+            gsap.to(keepsakeBtn, { color: "rgba(255, 255, 255, 0.3)", duration: 0.3 });
+            gsap.to('#stardust-cursor', { scale: 1, opacity: 1, duration: 0.3, ease: "expo.out" });
+        });
+
+        keepsakeBtn.addEventListener('click', () => {
+            // Visual feedback on click
+            gsap.to(keepsakeBtn, { scale: 0.95, duration: 0.1, yoyo: true, repeat: 1 });
+            
+            const letter = document.querySelector('.letter-paper');
+            
+            // Save the current hidden/transformed state of the letter
+            const originalOpacity = letter.style.opacity;
+            const originalTransform = letter.style.transform;
+            
+            // Temporarily move the letter off-screen and reset its properties for a clean, flat snapshot
+            gsap.set(letter, { opacity: 1, scale: 1, rotationX: 0, y: 0, position: 'absolute', top: '-9999px' });
+            
+            // Take a high-res (scale: 3) screenshot
+            html2canvas(letter, { backgroundColor: null, scale: 3, logging: false }).then(canvas => {
+                // Create a virtual link and trigger the download
+                const link = document.createElement('a');
+                link.download = 'Letter-from-Yash.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                
+                // Quietly revert the letter back to its hidden cinematic state
+                gsap.set(letter, { opacity: originalOpacity, transform: originalTransform, position: 'relative', top: 'auto' });
+            });
+        });
+    }
+};
+
+// --- 6. STARDUST CURSOR LOGIC ---
+const initStardustCursor = () => {
+    // Only initialize on desktop (non-touch) devices
+    if (window.matchMedia("(pointer: coarse)").matches) return;
+
+    const cursor = document.getElementById('stardust-cursor');
+    const canvas = document.getElementById('cursor-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+
+    window.addEventListener('resize', () => {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+    });
+
+    const particles = [];
+    
+    // Use GSAP quickSetter for ultra-smooth 60fps cursor follow
+    gsap.set(cursor, { xPercent: -50, yPercent: -50 });
+    const setCursorX = gsap.quickSetter(cursor, "x", "px");
+    const setCursorY = gsap.quickSetter(cursor, "y", "px");
+
+    document.addEventListener('mousemove', (e) => {
+        setCursorX(e.clientX);
+        setCursorY(e.clientY);
+
+        // Spawn beautiful fading stardust particles along the path
+        particles.push({
+            x: e.clientX,
+            y: e.clientY,
+            vx: (Math.random() - 0.5) * 0.8,
+            vy: (Math.random() - 0.5) * 0.8 + 0.2, // Drift slightly downwards
+            life: 1,
+            size: Math.random() * 1.5 + 0.5
+        });
+    });
+
+    // Make the stardust cursor react to interactive elements
+    const clickables = document.querySelectorAll('button, [role="button"], a');
+    clickables.forEach(el => {
+        el.addEventListener('mouseenter', () => gsap.to(cursor, { scale: 2.5, opacity: 0.8, duration: 0.3, ease: "expo.out" }));
+        el.addEventListener('mouseleave', () => gsap.to(cursor, { scale: 1, opacity: 1, duration: 0.3, ease: "expo.out" }));
+    });
+
+    const renderParticles = () => {
+        ctx.clearRect(0, 0, width, height);
+        for (let i = 0; i < particles.length; i++) {
+            let p = particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life -= 0.025; // Speed of fade out
+
+            if (p.life <= 0) {
+                particles.splice(i, 1);
+                i--;
+                continue;
+            }
+
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(229, 198, 159, ${p.life})`;
+            ctx.fill();
+        }
+        requestAnimationFrame(renderParticles);
+    };
+    renderParticles();
 };
 
 // --- INITIALIZATION ---
 document.addEventListener("DOMContentLoaded", () => {
     initUniverse();
+    initStardustCursor();
     playOpeningSequence();
     setupMemories();
     setupEnding();
