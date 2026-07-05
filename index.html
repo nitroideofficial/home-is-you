@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>For Miss Zuzia</title>
+    <meta name="theme-color" content="#010103">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <audio id="bg-audio" src="audio/background.mp3" loop preload="auto"></audio>
+
+    <div class="aurora-bg" aria-hidden="true" id="aurora"></div>
+    <div id="canvas-container" aria-hidden="true"></div>
+    <div id="magical-light" aria-hidden="true"></div>
+
+    <main id="ui-layer">
+        
+        <section id="sequence-opening" class="active">
+            <div class="text-plate" id="text-home">
+                <h1>HOME IS YOU</h1>
+            </div>
+            
+            <div class="text-plate" id="text-zuzia">
+                <h2>For Miss Zuzia</h2>
+            </div>
+
+            <div class="gift-sequence" id="gift-stage">
+                <div class="star-particle" id="approaching-star"></div>
+                
+                <div class="gift-wrapper" id="premium-gift">
+                    <svg viewBox="0 0 100 100" class="gift-svg" aria-hidden="true">
+                        <g class="gift-lid">
+                            <rect x="20" y="30" width="60" height="15" rx="2" fill="none" stroke="#fff" stroke-width="1.5"/>
+                            <path d="M50 30 C 40 15, 25 25, 45 30 Z" fill="none" stroke="#E5C69F" stroke-width="1.5"/>
+                            <path d="M50 30 C 60 15, 75 25, 55 30 Z" fill="none" stroke="#E5C69F" stroke-width="1.5"/>
+                        </g>
+                        <g class="gift-box">
+                            <rect x="25" y="45" width="50" height="40" rx="1" fill="none" stroke="#fff" stroke-width="1.5"/>
+                            <line x1="50" y1="45" x2="50" y2="85" stroke="#E5C69F" stroke-width="1.5"/>
+                        </g>
+                    </svg>
+                </div>
+
+                <button id="btn-begin" aria-label="Begin our journey">Begin Our Journey</button>
+            </div>
+        </section>
+
+        <section id="sequence-memories">
+            
+            <div class="memory-vignette active" id="mem-1">
+                <div class="mem-visual floating" id="vis-dice" role="button" tabindex="0" aria-label="Cast the dice">
+                    <div class="dice-scene">
+                        <div class="dice-cube" id="dice-cube">
+                            <div class="d-face d-front"><span class="d-dot"></span></div>
+                            <div class="d-face d-back">
+                                <span class="d-dot"></span><span class="d-dot"></span><span class="d-dot"></span>
+                                <span class="d-dot"></span><span class="d-dot"></span><span class="d-dot"></span>
+                            </div>
+                            <div class="d-face d-right"><span class="d-dot"></span><span class="d-dot"></span><span class="d-dot"></span></div>
+                            <div class="d-face d-left"><span class="d-dot"></span><span class="d-dot"></span><span class="d-dot"></span><span class="d-dot"></span></div>
+                            <div class="d-face d-top"><span class="d-dot"></span><span class="d-dot"></span><span class="d-dot"></span><span class="d-dot"></span><span class="d-dot"></span></div>
+                            <div class="d-face d-bottom"><span class="d-dot"></span><span class="d-dot"></span></div>
+                        </div>
+                    </div>
+                    <span class="interaction-hint">Cast</span>
+                </div>
+                <div class="mem-content">
+                    <p>It all started with something so small... just a few rolls of a dice.<br><br>Neither of us knew those tiny moments would eventually change everything.</p>
+                    <button class="btn-continue">Next Memory</button>
+                </div>
+            </div>
+
+            <div class="memory-vignette" id="mem-2">
+                <div class="mem-visual floating" id="vis-chat" role="button" tabindex="0" aria-label="Connect the chat dots">
+                    <div class="chat-dot dot-left"></div>
+                    <div class="chat-dot dot-right"></div>
+                    <span class="interaction-hint">Connect</span>
+                </div>
+                <div class="mem-content">
+                    <p>I thought I was only finding another excuse to message you.<br><br>Then one conversation became another... and before I realized it, talking to you became my favorite part of every day.</p>
+                    <button class="btn-continue">Next Memory</button>
+                </div>
+            </div>
+
+            <div class="memory-vignette" id="mem-3">
+                <div class="mem-visual floating cinematic-photo-container" id="vis-mafia" role="button" tabindex="0" aria-label="Develop the photo">
+                    <div class="cinematic-photo" id="mafia-photo">
+                        <div class="photo-glare"></div>
+                        <svg viewBox="0 0 100 100" class="mafia-silhouette" aria-hidden="true">
+                            <path d="M20,80 Q50,30 80,80" fill="none" stroke="#fff" stroke-width="1.5" />
+                            <path d="M35,80 L50,55 L65,80" fill="none" stroke="#E5C69F" stroke-width="1.5" />
+                            <circle cx="50" cy="45" r="10" fill="none" stroke="#fff" stroke-width="1" />
+                        </svg>
+                    </div>
+                    <span class="interaction-hint">Develop</span>
+                </div>
+                <div class="mem-content">
+                    <p>You still don't know how much trouble that mafia profile picture caused.<br><br>You jokingly fell for my thirst trap... I looked at you... and somehow we both completely lost.</p>
+                    <button class="btn-continue">Next Memory</button>
+                </div>
+            </div>
+
+            <div class="memory-vignette" id="mem-4">
+                <div class="mem-visual floating" id="vis-mc" role="button" tabindex="0" aria-label="Build the world">
+                    <svg viewBox="0 0 200 200" class="mc-island" aria-hidden="true">
+                        <polygon class="mc-part mc-dirt" points="100,165 140,140 100,115 60,140" fill="rgba(109, 76, 65, 0.4)" stroke="#E5C69F" stroke-width="1.5"/>
+                        <polygon class="mc-part mc-dirt" points="60,140 100,165 100,185 60,160" fill="none" stroke="#E5C69F" stroke-width="1.5"/>
+                        <polygon class="mc-part mc-dirt" points="100,165 140,140 140,160 100,185" fill="none" stroke="#E5C69F" stroke-width="1.5"/>
+                        <polygon class="mc-part mc-grass" points="100,115 140,140 140,145 100,170 60,145 60,140" fill="none" stroke="#81C784" stroke-width="1.5"/>
+                        <polygon class="mc-part mc-grass" points="100,115 140,140 100,165 60,140" fill="rgba(129, 199, 132, 0.15)" stroke="#81C784" stroke-width="1.5"/>
+                        <path class="mc-part mc-wood" d="M115,128 L115,75" fill="none" stroke="#A1887F" stroke-width="2"/>
+                        <circle class="mc-part mc-leaf" cx="115" cy="65" r="22" fill="rgba(255, 183, 197, 0.12)" stroke="#ffb7c5" stroke-width="1.2" stroke-dasharray="4 4"/>
+                        <circle class="mc-part mc-leaf" cx="100" cy="80" r="16" fill="rgba(255, 183, 197, 0.15)" stroke="#ffb7c5" stroke-width="1.2"/>
+                        <circle class="mc-part mc-leaf" cx="130" cy="80" r="14" fill="rgba(255, 183, 197, 0.12)" stroke="#ffb7c5" stroke-width="1.2"/>
+                        <rect class="mc-part mc-lantern" x="75" y="105" width="8" height="12" fill="none" stroke="#ffcc00" stroke-width="1"/>
+                        <circle class="mc-glow" cx="79" cy="111" r="18" fill="#ffcc00" filter="blur(8px)" opacity="0"/>
+                        <circle class="mc-petal" cx="105" cy="70" r="1.5" fill="#ffb7c5" opacity="0"/>
+                        <circle class="mc-petal" cx="125" cy="75" r="1.5" fill="#ffb7c5" opacity="0"/>
+                        <circle class="mc-petal" cx="95" cy="85" r="1.5" fill="#ffb7c5" opacity="0"/>
+                    </svg>
+                    <span class="interaction-hint">Build</span>
+                </div>
+                <div class="mem-content">
+                    <p>It was never really about the blocks or the game.<br><br>It was our quiet, peaceful place away from the noise. We were just building something together.</p>
+                    <button class="btn-continue">Next Memory</button>
+                </div>
+            </div>
+
+            <div class="memory-vignette" id="mem-5">
+                <div class="mem-visual floating" id="vis-distance" role="button" tabindex="0" aria-label="Bridge the distance">
+                    <svg viewBox="0 0 200 100" class="stroke-icon wide-icon" aria-hidden="true">
+                        <circle cx="30" cy="50" r="3.5" fill="#fff" id="node-in"/>
+                        <text x="30" y="72" fill="rgba(255,255,255,0.7)" font-size="9" text-anchor="middle" font-family="sans-serif" letter-spacing="0.25em">INDIA</text>
+                        <circle cx="170" cy="50" r="3.5" fill="#fff" id="node-pl"/>
+                        <text x="170" y="72" fill="rgba(255,255,255,0.7)" font-size="9" text-anchor="middle" font-family="sans-serif" letter-spacing="0.25em">POLAND</text>
+                        <path d="M34,50 Q100,15 166,50" fill="none" stroke="#E5C69F" stroke-width="1.2" stroke-dasharray="150" stroke-dashoffset="150" id="distance-line"/>
+                        <circle cx="34" cy="50" r="2.5" fill="#ffffff" id="travel-dot" opacity="0"/>
+                    </svg>
+                    <span class="interaction-hint">Bridge</span>
+                </div>
+                <div class="mem-content">
+                    <p>Maps say we're thousands of kilometers apart. My heart completely disagrees.<br><br>Different skies. Different countries. The same moon. The same love.</p>
+                    <button class="btn-continue">Next Memory</button>
+                </div>
+            </div>
+
+            <div class="memory-vignette" id="mem-6">
+                <div class="mem-visual floating" id="vis-home" role="button" tabindex="0" aria-label="Enter home">
+                    <svg viewBox="0 0 200 80" class="home-svg" aria-hidden="true">
+                        <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" class="draw-text" id="home-text">Home</text>
+                    </svg>
+                    <span class="interaction-hint">Enter</span>
+                </div>
+                <div class="mem-content">
+                    <p>I spent so long wondering where home really was.<br><br>Then one day... without even realizing it... I found it.<br><br>It was always you.</p>
+                    <button class="btn-read-letter">Read the Letter</button>
+                </div>
+            </div>
+
+        </section>
+
+        <section id="sequence-letter">
+            
+            <div class="envelope-stage" id="envelope-stage">
+                <div class="envelope-wrapper breathing" id="envelope" role="button" tabindex="0" aria-label="Open the letter">
+                    <div class="env-back"></div>
+                    
+                    <div class="env-letter" id="envelope-preview">
+                        <div class="letter-texture"></div>
+                    </div>
+                    
+                    <div class="env-front-flaps">
+                        <svg viewBox="0 0 320 220" preserveAspectRatio="none" aria-hidden="true">
+                            <polygon points="0,0 160,110 0,220" fill="#e3dec9" />
+                            <polygon points="320,0 160,110 320,220" fill="#e3dec9" />
+                            <polygon points="0,220 160,110 320,220" fill="#fcf9f2" filter="drop-shadow(0 -2px 5px rgba(0,0,0,0.08))" />
+                        </svg>
+                    </div>
+                    
+                    <div class="env-top-flap" id="flap-top">
+                        <svg viewBox="0 0 320 130" preserveAspectRatio="none" aria-hidden="true">
+                            <polygon points="0,0 160,130 320,0" fill="#fcf9f2" />
+                        </svg>
+                        <div class="wax-seal" id="wax-seal">
+                            <div class="wax-inner">Z</div>
+                        </div>
+                    </div>
+                </div>
+                <span class="interaction-hint" id="envelope-hint">Open</span>
+            </div>
+
+            <div class="letter-reading-view" id="letter-view">
+                <div class="letter-paper">
+                    <div class="paper-content">
+                        <p class="greeting">My dearest Zuzia,</p>
+                        
+                        <div class="letter-body">
+                            <p>I wanted to build something that feels like ours. A quiet place away from the noise, just for you and me.</p>
+                            <p>Every memory we've shared, from those first late-night messages to building worlds together, has meant everything to me. Maps might say we are far apart, but you've always felt incredibly close.</p>
+                            <p>You are my peace, my adventure, and my favorite part of every single day.</p>
+                            <p class="signature">- Yash</p>
+                        </div>
+                        
+                        <div class="voice-note-container">
+                            <audio id="voice-audio" src="voice/voice1.mp3" preload="auto"></audio>
+                            
+                            <div class="play-button" id="btn-voice-note" role="button" tabindex="0" aria-label="Play voice note">
+                                <svg viewBox="0 0 24 24" class="play-icon" aria-hidden="true">
+                                    <path d="M8 5v14l11-7z" fill="currentColor"/>
+                                </svg>
+                                <svg viewBox="0 0 24 24" class="pause-icon" style="display:none;" aria-hidden="true">
+                                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" fill="currentColor"/>
+                                </svg>
+                            </div>
+                            
+                            <div class="audio-visualizer" id="visualizer" aria-hidden="true">
+                                <span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span>
+                            </div>
+                            
+                            <div class="voice-status" id="voice-status" aria-live="polite">Listen to my voice</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button id="btn-continue-journey" class="btn-letter-continue">Continue</button>
+            </div>
+
+        </section>
+
+        <section id="sequence-ending">
+            <div class="ending-message" id="end-msg-1">Happy Birthday,<br>Miss Zuzia</div>
+            <div class="ending-message" id="end-msg-2">No matter how many birthdays come and go...</div>
+            <div class="ending-message" id="end-msg-3">I'll always be grateful that somewhere in this universe...</div>
+            <div class="ending-message" id="end-msg-4">you exist.</div>
+            <div class="ending-message" id="end-msg-5">Thank you for becoming my home.</div>
+        </section>
+
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
